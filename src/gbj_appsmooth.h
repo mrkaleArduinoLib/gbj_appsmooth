@@ -55,7 +55,6 @@ public:
   */
   inline void begin(byte measures = 1, DAT nan = (DAT)0)
   {
-    SERIAL_TITLE("begin")
     smootherCnt_ = max((byte)1, measures);
     nan_ = nan;
     smoothers_ = new Smoother[smootherCnt_];
