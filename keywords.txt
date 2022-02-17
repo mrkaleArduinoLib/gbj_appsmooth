@@ -1,0 +1,29 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+gbj_appsmooth	KEYWORD2
+begin	KEYWORD2
+setValue	KEYWORD2
+setMinimum	KEYWORD2
+resetMinimum	KEYWORD2
+setMaximum	KEYWORD2
+resetMaximum	KEYWORD2
+getMeasures	KEYWORD2
+getMeasurePtr	KEYWORD2
+getValue	KEYWORD2
+getInput	KEYWORD2
+getMinimum	KEYWORD2
+getMaximum	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+VERSION	LITERAL1
