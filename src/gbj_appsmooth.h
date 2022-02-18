@@ -102,6 +102,7 @@ public:
     else
     {
       smoothers_[idx].valueOutput = nan_;
+      smoothers_[idx].flNan = true;
       return smoothers_[idx].setValue(data);
     }
   }
@@ -254,6 +255,17 @@ public:
       return nan_;
     }
   }
+  inline bool isNan(byte idx = 0)
+  {
+    if (idx < smootherCnt_)
+    {
+      return smoothers_[idx].flNan;
+    }
+    else
+    {
+      return true;
+    }
+  }
 
 private:
   struct Smoother
@@ -265,6 +277,7 @@ private:
     FLT smoother; // Should be after DAT members
     bool flMin; // Test for minimum if true
     bool flMax; // Test for maximum if true
+    bool flNan; // Output value is NAN
     bool setValue(DAT val)
     {
       valueInput = val;
@@ -277,6 +290,7 @@ private:
         return false;
       }
       valueOutput = (DAT)smoother.getValue((DAT)val);
+      flNan = false;
       return true;
     }
   };
