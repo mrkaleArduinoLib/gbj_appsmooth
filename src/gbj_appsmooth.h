@@ -24,6 +24,10 @@
 #elif defined(ESP8266) || defined(ESP32)
   #include <Arduino.h>
 #endif
+#include "gbj_serial_debug.h"
+
+#undef SERIAL_PREFIX
+#define SERIAL_PREFIX "gbj_appsmooth"
 
 template<class FLT, typename DAT = float>
 class gbj_appsmooth
@@ -55,14 +59,15 @@ public:
   */
   inline void begin(byte measures = 1, DAT nan = (DAT)0)
   {
+    SERIAL_VALUE("begin", measures)
     smootherCnt_ = max((byte)1, measures);
     nan_ = nan;
     smoothers_ = new Smoother[smootherCnt_];
     for (byte i = 0; i < smootherCnt_; i++)
     {
       smoothers_[i].smoother = FLT();
-      smoothers_[i].minimum = nan_;
-      smoothers_[i].maximum = nan_;
+      resetMinimum(i);
+      resetMaximum(i);
     }
   }
 
@@ -209,7 +214,7 @@ public:
   {
     if (idx < smootherCnt_)
     {
-      return smoothers_[idx].getOutput();
+      return smoothers_[idx].valueOutput;
     }
     else
     {
@@ -220,7 +225,7 @@ public:
   {
     if (idx < smootherCnt_)
     {
-      return smoothers_[idx].getInput();
+      return smoothers_[idx].valueInput;
     }
     else
     {
@@ -253,11 +258,11 @@ public:
 private:
   struct Smoother
   {
-    FLT smoother;
     DAT valueInput;
     DAT valueOutput;
     DAT minimum;
     DAT maximum;
+    FLT smoother; // Should be after DAT members
     bool flMin; // Test for minimum if true
     bool flMax; // Test for maximum if true
     bool setValue(DAT val)
@@ -271,15 +276,13 @@ private:
       {
         return false;
       }
-      valueOutput = smoother.getValue(valueInput);
+      valueOutput = (DAT)smoother.getValue((DAT)val);
       return true;
     }
-    DAT getOutput() { return valueOutput; }
-    DAT getInput() { return valueInput; }
   };
   DAT nan_; // Defined wrong value
   Smoother *smoothers_; // List of measures' smoothers
-  byte smootherCnt_;  // Number of used measures
+  byte smootherCnt_; // Number of used measures
 };
 
 #endif
