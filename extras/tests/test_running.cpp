@@ -1,7 +1,7 @@
 /*
   NAME:
   Unit tests of application library "gbj_appsmoothing" for smoothing
-  with the generic library "gbj_exponential".
+  with the generic library "gbj_running".
 
   DESCRIPTION:
   The test file provides test cases for smoothing measures of various data
@@ -17,34 +17,28 @@
 */
 #define SERIAL_NODEBUG
 #include "gbj_appsmooth.h"
-#include "gbj_exponential.h"
+#include "gbj_running.h"
 #include <Arduino.h>
 #include <unity.h>
 
 //******************************************************************************
 // Preparation
 //******************************************************************************
-const float EXPONENTIAL_FACTOR = 0.2;
-const float MINIMUM = 40.0;
-const float MAXIMUM = 60.0;
+const float MINIMUM = 300.0;
+const float MAXIMUM = 800.0;
+const byte BUFFER_LEN = 5;
 const byte MEASURES = 2;
 
-const float SAMPLE_LIST[] = { 38.9, 45.0, 56.7, 61.7, 42.3 };
+const float SAMPLE_LIST[] = { 423, 753, 217, 42, 898, 712, 728, 510, 835, 77 };
 const byte SAMPLES = sizeof(SAMPLE_LIST) / sizeof(SAMPLE_LIST[0]);
 
-gbj_appsmooth<gbj_exponential, float> smoothFloat =
-  gbj_appsmooth<gbj_exponential, float>();
-
-gbj_appsmooth<gbj_exponential, int> smoothUint =
-  gbj_appsmooth<gbj_exponential, int>();
+gbj_appsmooth<gbj_running, float> smoothFloat =
+  gbj_appsmooth<gbj_running, float>();
+gbj_appsmooth<gbj_running, int> smoothUint = gbj_appsmooth<gbj_running, int>();
 
 void setup_float_norange()
 {
   smoothFloat.begin(MEASURES);
-  for (byte i = 0; i < smoothFloat.getMeasures(); i++)
-  {
-    smoothFloat.getMeasurePtr(i)->setFactor(EXPONENTIAL_FACTOR);
-  }
 }
 
 void setup_float_range()
@@ -52,7 +46,7 @@ void setup_float_range()
   smoothFloat.begin(MEASURES);
   for (byte i = 0; i < smoothFloat.getMeasures(); i++)
   {
-    smoothFloat.getMeasurePtr(i)->setFactor(EXPONENTIAL_FACTOR);
+    smoothFloat.getMeasurePtr(i)->setAverage();
     smoothFloat.setMinimum(MINIMUM * (i + 1), i);
     smoothFloat.setMaximum(MAXIMUM * (i + 1), i);
   }
@@ -61,28 +55,15 @@ void setup_float_range()
 void setup_uint_norange()
 {
   smoothUint.begin(MEASURES);
-  for (byte i = 0; i < smoothUint.getMeasures(); i++)
+  for (byte i = 0; i < smoothFloat.getMeasures(); i++)
   {
-    smoothUint.getMeasurePtr(i)->setFactor(EXPONENTIAL_FACTOR);
+    smoothUint.getMeasurePtr(i)->setAverage();
   }
 }
 
 //******************************************************************************
 // Tests
 //******************************************************************************
-void test_factor_float(void)
-{
-  float valActual, valExpected;
-  setup_float_norange();
-  for (byte i = 0; i < MEASURES; i++)
-  {
-    valExpected = EXPONENTIAL_FACTOR;
-    valActual = smoothFloat.getMeasurePtr(i)->getFactor();
-    String msg = "i=" + String(i);
-    TEST_ASSERT_EQUAL_FLOAT_MESSAGE(valExpected, valActual, msg.c_str());
-  }
-}
-
 void test_minimum_float(void)
 {
   float valActual, valExpected;
@@ -111,24 +92,22 @@ void test_maximum_float(void)
 
 void test_float_norange(void)
 {
-  float valInput, valActual, valExpected;
+  float valActual, valExpected;
   setup_float_norange();
   for (byte i = 0; i < MEASURES; i++)
   {
     for (byte j = 0; j < SAMPLES; j++)
     {
-      valInput = SAMPLE_LIST[j] * (i + 1);
       // Algorithm
-      if (j)
+      int kStart = max(0, j + 1 - BUFFER_LEN);
+      valExpected = 0;
+      for (byte k = kStart; k <= j; k++)
       {
-        valExpected += EXPONENTIAL_FACTOR * (valInput - valExpected);
+        valExpected += SAMPLE_LIST[k] * (i + 1);
       }
-      else
-      {
-        valExpected = valInput;
-      }
+      valExpected /= j + 1 - kStart;
       // Testee
-      smoothFloat.setValue(valInput, i);
+      smoothFloat.setValue(SAMPLE_LIST[j] * (i + 1), i);
       valActual = smoothFloat.getValue(i);
       String msg = "i=" + String(i) + ", j=" + String(j);
       TEST_ASSERT_EQUAL_FLOAT_MESSAGE(valExpected, valActual, msg.c_str());
@@ -138,32 +117,29 @@ void test_float_norange(void)
 
 void test_float_range(void)
 {
-  float valInput, valActual, valExpected, valExpectedOld;
+  float valInput, valActual, valExpected;
+  byte items;
   setup_float_range();
   for (byte i = 0; i < MEASURES; i++)
   {
-    bool flInit = false;
-    valExpectedOld = 0;
     for (byte j = 0; j < SAMPLES; j++)
     {
-      valInput = SAMPLE_LIST[j] * (i + 1);
       // Algorithm
-      if (valInput < (MINIMUM * (i + 1)) || valInput > (MAXIMUM * (i + 1)))
+      int k = j;
+      items = 0;
+      valExpected = 0;
+      do
       {
-        valExpected = valExpectedOld;
-      }
-      else if (flInit)
-      {
-        valExpectedOld += EXPONENTIAL_FACTOR * (valInput - valExpectedOld);
-        valExpected = valExpectedOld;
-      }
-      else
-      {
-        valExpected = valInput;
-        valExpectedOld = valExpected;
-        flInit = true;
-      }
+        valInput = SAMPLE_LIST[k] * (i + 1);
+        if (valInput >= (MINIMUM * (i + 1)) && valInput <= (MAXIMUM * (i + 1)))
+        {
+          valExpected += valInput;
+          items++;
+        }
+      } while (items < BUFFER_LEN && --k >= 0);
+      valExpected /= items;
       // Testee
+      valInput = SAMPLE_LIST[j] * (i + 1);
       smoothFloat.setValue(valInput, i);
       valActual = smoothFloat.getValue(i);
       String msg = "i=" + String(i) + ", j=" + String(j);
@@ -172,42 +148,24 @@ void test_float_range(void)
   }
 }
 
-void test_factor_uint(void)
-{
-  float valActual, valExpected;
-  setup_uint_norange();
-  for (byte i = 0; i < MEASURES; i++)
-  {
-    valExpected = EXPONENTIAL_FACTOR;
-    valActual = smoothUint.getMeasurePtr(i)->getFactor();
-    String msg = "i=" + String(i);
-    TEST_ASSERT_EQUAL_UINT_MESSAGE(valExpected, valActual, msg.c_str());
-  }
-}
-
 void test_uint_norange(void)
 {
-  unsigned int valInput, valActual, valExpected;
-  float valExpectedOld;
+  unsigned int valActual, valExpected;
   setup_uint_norange();
   for (byte i = 0; i < MEASURES; i++)
   {
     for (byte j = 0; j < SAMPLES; j++)
     {
-      valInput = SAMPLE_LIST[j] * (i + 1);
       // Algorithm
-      if (j)
+      int kStart = max(0, j + 1 - BUFFER_LEN);
+      valExpected = 0;
+      for (byte k = kStart; k <= j; k++)
       {
-        valExpectedOld += EXPONENTIAL_FACTOR * (valInput - valExpectedOld);
-        valExpected = valExpectedOld;
+        valExpected += SAMPLE_LIST[k] * (i + 1);
       }
-      else
-      {
-        valExpected = valInput;
-        valExpectedOld = valExpected;
-      }
+      valExpected /= j + 1 - kStart;
       // Testee
-      smoothUint.setValue(valInput, i);
+      smoothUint.setValue(SAMPLE_LIST[j] * (i + 1), i);
       valActual = smoothUint.getValue(i);
       String msg = "i=" + String(i) + ", j=" + String(j);
       TEST_ASSERT_EQUAL_UINT_MESSAGE(valExpected, valActual, msg.c_str());
@@ -223,13 +181,11 @@ void setup()
   delay(2000);
   UNITY_BEGIN();
 
-  RUN_TEST(test_factor_float);
   RUN_TEST(test_minimum_float);
   RUN_TEST(test_maximum_float);
   RUN_TEST(test_float_norange);
   RUN_TEST(test_float_range);
   //
-  RUN_TEST(test_factor_uint);
   RUN_TEST(test_uint_norange);
 
   UNITY_END();
