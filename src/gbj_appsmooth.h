@@ -57,12 +57,12 @@ public:
   inline void begin(byte measures = 1)
   {
     SERIAL_VALUE("begin", measures)
-    smootherCnt_ = max((byte)1, measures);
-    smoothers_ = new Smoother[smootherCnt_];
-    for (byte i = 0; i < smootherCnt_; i++)
+    measures_ = max((byte)1, measures);
+    smoothers_ = new Smoother[measures_];
+    for (byte i = 0; i < measures_; i++)
     {
       smoothers_[i].smoother = FLT();
-      smoothers_[i].valueOutput = smoothers_[i].smoother.getValue();
+      smoothers_[i].valueOutput = (DAT)smoothers_[i].smoother.getValue();
       smoothers_[i].flValid = true;
       resetMinimum(i);
       resetMaximum(i);
@@ -99,11 +99,11 @@ public:
     Set filtering extreme values for particular measure
 
     DESCRIPTION:
-    The particular setter method sets minimum or maximum value for
+    The overloaded methods set or reset minimum or maximum value for
     corresponding measure, i.e., defines its valid range against which the input
     value is tested.
-    The particular resetter method resets extreme value, so that the smoothed
-    values are not test against it more.
+    - If there is no measure index provided, the corresponding method acts
+      on all measures in cache.
 
     PARAMETERS:
     data - Extreme value for particular filtering method.
@@ -120,16 +120,44 @@ public:
     smoothers_[idx].minimum = data;
     smoothers_[idx].flMin = true;
   }
+  inline void setMinimum(DAT data)
+  {
+    for (byte i = 0; i < getMeasures(); i++)
+    {
+      setMinimum(data, i);
+    }
+  }
   inline void resetMinimum(byte idx = 0) { smoothers_[idx].flMin = false; }
+  inline void resetMinimum()
+  {
+    for (byte i = 0; i < getMeasures(); i++)
+    {
+      resetMinimum(i);
+    }
+  }
   inline void setMaximum(DAT data, byte idx = 0)
   {
     smoothers_[idx].maximum = data;
     smoothers_[idx].flMax = true;
   }
+  inline void setMaximum(DAT data)
+  {
+    for (byte i = 0; i < getMeasures(); i++)
+    {
+      setMaximum(data, i);
+    }
+  }
   inline void resetMaximum(byte idx = 0) { smoothers_[idx].flMax = false; }
+  inline void resetMaximum()
+  {
+    for (byte i = 0; i < getMeasures(); i++)
+    {
+      resetMaximum(i);
+    }
+  }
 
   // Getters
-  inline byte getMeasures() { return smootherCnt_; }
+  inline byte getMeasures() { return measures_; }
 
   /*
     Get pointer to the smoother for particular measure
@@ -185,12 +213,10 @@ private:
       valueInput = val;
       if (flMin && val < minimum)
       {
-        valueOutput = (DAT)smoother.getValue();
         return (flValid = false);
       }
       else if (flMax && val > maximum)
       {
-        valueOutput = (DAT)smoother.getValue();
         return (flValid = false);
       }
       valueOutput = (DAT)smoother.getValue((DAT)val);
@@ -198,7 +224,7 @@ private:
     }
   };
   Smoother *smoothers_; // List of measures' smoothers
-  byte smootherCnt_; // Number of used measures
+  byte measures_; // Number of used measures
 };
 
 #endif

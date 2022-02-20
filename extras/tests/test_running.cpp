@@ -26,10 +26,11 @@
 //******************************************************************************
 const float MINIMUM = 300.0;
 const float MAXIMUM = 800.0;
-const byte BUFFER_LEN = 5;
+const byte SAMPLES_LIB = 5;
 const byte MEASURES = 2;
 
-const float SAMPLE_LIST[] = { 423, 753, 217, 42, 898, 712, 728, 510, 835, 77 };
+const float SAMPLE_LIST[] = { 423, 753, 217, 42, 898, 712, 728,
+                              510, 835, 77,  2,  956, 623, 319 };
 const byte SAMPLES = sizeof(SAMPLE_LIST) / sizeof(SAMPLE_LIST[0]);
 
 gbj_appsmooth<gbj_running, float> smoothFloat =
@@ -64,6 +65,14 @@ void setup_uint_norange()
 //******************************************************************************
 // Tests
 //******************************************************************************
+void test_measures(void)
+{
+  byte valExpected, valActual;
+  valExpected = SAMPLES_LIB;
+  valActual = gbj_running::SAMPLES;
+  TEST_ASSERT_EQUAL_UINT8(valExpected, valActual);
+}
+
 void test_minimum_float(void)
 {
   float valActual, valExpected;
@@ -99,7 +108,7 @@ void test_float_norange(void)
     for (byte j = 0; j < SAMPLES; j++)
     {
       // Algorithm
-      int kStart = max(0, j + 1 - BUFFER_LEN);
+      int kStart = max(0, j + 1 - SAMPLES_LIB);
       valExpected = 0;
       for (byte k = kStart; k <= j; k++)
       {
@@ -136,7 +145,7 @@ void test_float_range(void)
           valExpected += valInput;
           items++;
         }
-      } while (items < BUFFER_LEN && --k >= 0);
+      } while (items < SAMPLES_LIB && --k >= 0);
       valExpected /= items;
       // Testee
       valInput = SAMPLE_LIST[j] * (i + 1);
@@ -157,7 +166,7 @@ void test_uint_norange(void)
     for (byte j = 0; j < SAMPLES; j++)
     {
       // Algorithm
-      int kStart = max(0, j + 1 - BUFFER_LEN);
+      int kStart = max(0, j + 1 - SAMPLES_LIB);
       valExpected = 0;
       for (byte k = kStart; k <= j; k++)
       {
@@ -181,6 +190,7 @@ void setup()
   delay(2000);
   UNITY_BEGIN();
 
+  RUN_TEST(test_measures);
   RUN_TEST(test_minimum_float);
   RUN_TEST(test_maximum_float);
   RUN_TEST(test_float_norange);
