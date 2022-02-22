@@ -29,13 +29,11 @@
 #undef SERIAL_PREFIX
 #define SERIAL_PREFIX "gbj_appsmooth"
 
-template<class FLT, typename DAT = float>
+template<class SMT, typename DAT = float>
 class gbj_appsmooth
 {
 public:
   const String VERSION = "GBJ_APPSMOOTH 1.0.0";
-
-  inline gbj_appsmooth() {}
 
   /*
     Initialization.
@@ -61,7 +59,7 @@ public:
     smoothers_ = new Smoother[measures_];
     for (byte i = 0; i < measures_; i++)
     {
-      smoothers_[i].smoother = FLT();
+      smoothers_[i].smoother = SMT();
       smoothers_[i].valueOutput = (DAT)smoothers_[i].smoother.getValue();
       smoothers_[i].flValid = true;
       resetMinimum(i);
@@ -110,12 +108,12 @@ public:
       - Data type: templated
     idx - Measure index which value should be filtered counting from zero.
       - Data type: non-negative integer
-      - Default value: 0
+      - Default value: none
       - Limited range: 0 ~ (measures - 1)
 
     RETURN: Filtering result flag
   */
-  inline void setMinimum(DAT data, byte idx = 0)
+  inline void setMinimum(DAT data, byte idx)
   {
     smoothers_[idx].minimum = data;
     smoothers_[idx].flMin = true;
@@ -127,7 +125,7 @@ public:
       setMinimum(data, i);
     }
   }
-  inline void resetMinimum(byte idx = 0) { smoothers_[idx].flMin = false; }
+  inline void resetMinimum(byte idx) { smoothers_[idx].flMin = false; }
   inline void resetMinimum()
   {
     for (byte i = 0; i < getMeasures(); i++)
@@ -135,7 +133,7 @@ public:
       resetMinimum(i);
     }
   }
-  inline void setMaximum(DAT data, byte idx = 0)
+  inline void setMaximum(DAT data, byte idx)
   {
     smoothers_[idx].maximum = data;
     smoothers_[idx].flMax = true;
@@ -147,7 +145,7 @@ public:
       setMaximum(data, i);
     }
   }
-  inline void resetMaximum(byte idx = 0) { smoothers_[idx].flMax = false; }
+  inline void resetMaximum(byte idx) { smoothers_[idx].flMax = false; }
   inline void resetMaximum()
   {
     for (byte i = 0; i < getMeasures(); i++)
@@ -175,7 +173,7 @@ public:
 
     RETURN: Pointer to smoother or NULL
   */
-  inline FLT *getMeasurePtr(byte idx = 0) { return &smoothers_[idx].smoother; }
+  inline SMT *getMeasurePtr(byte idx = 0) { return &smoothers_[idx].smoother; }
 
   /*
     Get characteristic value for particular measure
@@ -204,7 +202,7 @@ private:
     DAT valueOutput;
     DAT minimum;
     DAT maximum;
-    FLT smoother; // Should be after DAT members
+    SMT smoother; // Should be after DAT members
     bool flMin; // Test for minimum if true
     bool flMax; // Test for maximum if true
     bool flValid; // Input accepted
