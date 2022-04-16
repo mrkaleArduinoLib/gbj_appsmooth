@@ -1,7 +1,7 @@
 <a id="library"></a>
 
 # gbj\_appsmooth
-This is an application library, which is used usually as a project library for particular PlatformIO project. It unifies and encapsulates the functionality of `statistical smoothing` subsequent samples with help of various generic smoothing libraries, e.g., _gbj_exponential_, _gbj_running_, etc. The encapsulation provides following advantages:
+This is an application library, which is used usually as a project library for particular PlatformIO project. It unifies and encapsulates the functionality of `statistical smoothing` with valid data range filtering of subsequent samples with help of various generic smoothing libraries, e.g., _gbj_exponential_, _gbj_running_, etc. The encapsulation provides following advantages:
 
 * Functionality is hidden from the main sketch.
 * The library follows the principle `separation of concerns`.
@@ -12,14 +12,12 @@ This is an application library, which is used usually as a project library for p
 
 ## Fundamental functionality
 * The library is templated, so that it can utilize various smoothing libraries for samples of various data types.
-* It provied filtering of samples against their valid range by setting minimal and maximal valid values.
+* It provides filtering of samples against their valid range by setting minimal and maximal valid values.
 
 
 <a id="dependency"></a>
 
 ## Dependency
-* **gbj\_serial\_debug**: Auxilliary library for debug serial output loaded from the file `gbj_serial_debug.h`. It enables to exclude serial outputs from final compilation.
-
 #### Arduino platform
 * **Arduino.h**: Main include file for the Arduino SDK.
 * **inttypes.h**: Integer type conversions. This header file includes the exact-width integer definitions and extends them with additional facilities provided by the implementation.
@@ -69,6 +67,7 @@ The subfolder `tests` in the folder `extras`, i.e., `gbj_appsmooth/extras/test`,
 * [getMeasures()](#getMeasures)
 * [getMeasurePtr()](#getMeasurePtr)
 * [isValid()](#isValid)
+* [isInvalid()](#isValid)
 
 
 <a id="gbj_appsmooth"></a>
@@ -76,10 +75,16 @@ The subfolder `tests` in the folder `extras`, i.e., `gbj_appsmooth/extras/test`,
 ## gbj_appsmooth()
 
 #### Description
-Constructor is implicit and only creates the class instance object. However, it is templated for particular generic smoothing library type and samples data type.
+Constructor creates the class instance object and is overloaded with various combinations of valid range limits applied implicitly for all smoothed measures.
+* It is templated for particular generic smoothing library type and samples data types.
+* If constructor has just one argument, that one is considered as the maximum of general valid range.
+* If both arguments are defined, the constructor sorts them internally if needed.
+* General limits can be overriden at individual measures by corresponding [setters](#setRange).
 
 #### Syntax
     gbj_appsmooth<class SMT, typename DAT>()
+    gbj_appsmooth<class SMT, typename DAT>(DAT valMin, DAT valMax)
+    gbj_appsmooth<class SMT, typename DAT>(DAT valMax)
 
 #### Parameters
 * **SMT**: Type of a generic smoothing library instance object.
@@ -91,6 +96,16 @@ Constructor is implicit and only creates the class instance object. However, it 
   * *Valid values*: various
   * *Default value*: float
 
+
+* **valMin**: Minimum of general valid range of samples of all smoothed measures.
+  * *Valid values*: various
+  * *Default value*: templated
+
+
+* **valMax**: Maximum of general valid range of samples of all smoothed measures.
+  * *Valid values*: various
+  * *Default value*: templated
+
 #### Returns
 Object performing smoothing management.
 
@@ -101,7 +116,7 @@ Object performing smoothing management.
 #include "gbj_running.h"
 
 gbj_appsmooth<gbj_exponential> smoothFloat = gbj_appsmooth<gbj_exponential>();
-gbj_appsmooth<gbj_exponential, int> smoothInt = gbj_appsmooth<gbj_running, int>();
+gbj_appsmooth<gbj_exponential, int> smoothInt = gbj_appsmooth<gbj_running, int>(10, 50);
 ```
 
 [Back to interface](#interface)
@@ -286,16 +301,17 @@ Recent input value.
 
 <a id="isValid"></a>
 
-## isValid()
+## isValid(), isInvalid()
 
 #### Description
-The method returns flag determining result of checking the input value against the valid range, i.e., whether the recently provided input value has been whithin the valid range.
+The particular method returns flag determining corresponding result of checking the input value against the valid range, i.e., whether the recently provided input value has been whithin the valid range limits.
 * If there is no sample value extreme defined, the check is not provided and method always returns positive flag.
-* The negative flag signals that the smoothed value returned by [getValue()](#getValue) is obsolete and input value returned by [getInput()](#getInput) is invalid.
-* The flag is useful to decide whether the smoothed value is worth, e.g., to be published or sent to an IoT platform.
+* The flag about invalidity signals that the smoothed value returned by [getValue()](#getValue) is obsolete and input value returned by [getInput()](#getInput) is invalid.
+* The particular flag is useful to decide whether the smoothed value is worth or not, e.g., to be published or sent to an IoT platform.
 
 #### Syntax
     bool isValid(byte idx)
+    bool isInvalid(byte idx)
 
 #### Parameters
 * **idx**: Index or sequence order of a measure, which input value should be returned counting from zero.

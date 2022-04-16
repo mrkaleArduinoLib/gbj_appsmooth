@@ -1,12 +1,12 @@
 {
   "name": "gbj_appsmooth",
   "keywords": "application",
-  "description": "Library manages statistical smoothing of multiple measures by various algorithms.",
+  "description": "Library manages statistical smoothing of multiple measures by various algorithms and with valid range filtering.",
   "repository": {
     "type": "git",
     "url": "https://github.com/mrkaleArduinoLib/gbj_appsmooth.git"
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "frameworks": "arduino",
   "platforms": [
     "atmelavr",

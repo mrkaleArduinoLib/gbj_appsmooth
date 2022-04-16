@@ -24,7 +24,6 @@
 #elif defined(ESP8266) || defined(ESP32)
   #include <Arduino.h>
 #endif
-#include "gbj_serial_debug.h"
 
 #undef SERIAL_PREFIX
 #define SERIAL_PREFIX "gbj_appsmooth"
@@ -33,7 +32,44 @@ template<class SMT, typename DAT = float>
 class gbj_appsmooth
 {
 public:
-  const String VERSION = "GBJ_APPSMOOTH 1.0.0";
+  const String VERSION = "GBJ_APPSMOOTH 1.1.0";
+
+  /*
+    Constructor
+
+    DESCRIPTION:
+    Overloaded constructor creates the class instance object and sets general
+    limit(s) for valid range of all measures.
+    - Just one constructor's argument is considered as maximum of the range.
+
+    PARAMETERS:
+    valMin - Minimum of a valid range of a data item.
+      - Data type: templated
+    valMax - Maximum of a valid range of a data item.
+      - Data type: templated
+
+    RETURN: object
+  */
+  inline gbj_appsmooth() {}
+  inline gbj_appsmooth(DAT valMin, DAT valMax)
+  {
+    if (valMin > valMax)
+    {
+      valMin_ = valMax;
+      valMax_ = valMin;
+    }
+    else
+    {
+      valMin_ = valMin;
+      valMax_ = valMax;
+    }
+    flGenMin_ = flGenMax_ = true;
+  }
+  inline gbj_appsmooth(DAT valMax)
+  {
+    valMax_ = valMax;
+    flGenMax_ = true;
+  }
 
   /*
     Initialization.
@@ -59,11 +95,20 @@ public:
     smoothers_ = new Smoother[measures_];
     for (byte i = 0; i < measures_; i++)
     {
-      smoothers_[i].smoother = SMT();
-      smoothers_[i].valueOutput = (DAT)smoothers_[i].smoother.getValue();
+      smoothers_[i].smoother = new SMT();
+      smoothers_[i].valueOutput = (DAT)smoothers_[i].smoother->getValue();
       smoothers_[i].flValid = true;
-      resetMinimum(i);
-      resetMaximum(i);
+    }
+    resetMinimum();
+    resetMaximum();
+    // General valid range limits
+    if (flGenMin_)
+    {
+      setMinimum(valMin_);
+    }
+    if (flGenMax_)
+    {
+      setMaximum(valMax_);
     }
   }
 
@@ -173,7 +218,7 @@ public:
 
     RETURN: Pointer to smoother or NULL
   */
-  inline SMT *getMeasurePtr(byte idx = 0) { return &smoothers_[idx].smoother; }
+  inline SMT *getMeasurePtr(byte idx = 0) { return smoothers_[idx].smoother; }
 
   /*
     Get characteristic value for particular measure
@@ -194,6 +239,7 @@ public:
   inline DAT getMinimum(byte idx = 0) { return smoothers_[idx].minimum; }
   inline DAT getMaximum(byte idx = 0) { return smoothers_[idx].maximum; }
   inline bool isValid(byte idx = 0) { return smoothers_[idx].flValid; }
+  inline bool isInvalid(byte idx = 0) { return !isValid(idx); }
 
 private:
   struct Smoother
@@ -202,7 +248,7 @@ private:
     DAT valueOutput;
     DAT minimum;
     DAT maximum;
-    SMT smoother; // Should be after DAT members
+    SMT *smoother; // Should be after DAT members
     bool flMin; // Test for minimum if true
     bool flMax; // Test for maximum if true
     bool flValid; // Input accepted
@@ -213,16 +259,18 @@ private:
       {
         return (flValid = false);
       }
-      else if (flMax && val > maximum)
+      if (flMax && val > maximum)
       {
         return (flValid = false);
       }
-      valueOutput = (DAT)smoother.getValue((DAT)val);
+      valueOutput = (DAT)smoother->getValue((DAT)val);
       return (flValid = true);
     }
   };
   Smoother *smoothers_; // List of measures' smoothers
   byte measures_; // Number of used measures
+  DAT valMin_, valMax_; // General range limits
+  bool flGenMin_, flGenMax_; // Flags about defining range limits
 };
 
 #endif
