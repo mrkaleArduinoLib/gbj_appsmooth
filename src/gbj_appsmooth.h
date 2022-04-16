@@ -32,7 +32,7 @@ template<class SMT, typename DAT = float>
 class gbj_appsmooth
 {
 public:
-  const String VERSION = "GBJ_APPSMOOTH 1.1.0";
+  const char *VERSION = "GBJ_APPSMOOTH 1.1.0";
 
   /*
     Constructor
