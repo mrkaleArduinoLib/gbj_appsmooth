@@ -32,7 +32,7 @@ template<class SMT, typename DAT = float>
 class gbj_appsmooth
 {
 public:
-  const char *VERSION = "GBJ_APPSMOOTH 1.1.0";
+  const char *VERSION = "GBJ_APPSMOOTH 1.2.0";
 
   /*
     Constructor
@@ -43,15 +43,15 @@ public:
     - Just one constructor's argument is considered as maximum of the range.
 
     PARAMETERS:
-    valMin - Minimum of a valid range of a data item.
-      - Data type: templated
     valMax - Maximum of a valid range of a data item.
+      - Data type: templated
+    valMin - Minimum of a valid range of a data item.
       - Data type: templated
 
     RETURN: object
   */
   inline gbj_appsmooth() {}
-  inline gbj_appsmooth(DAT valMin, DAT valMax)
+  inline gbj_appsmooth(DAT valMax, DAT valMin)
   {
     if (valMin > valMax)
     {

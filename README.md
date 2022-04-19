@@ -83,7 +83,7 @@ Constructor creates the class instance object and is overloaded with various com
 
 #### Syntax
     gbj_appsmooth<class SMT, typename DAT>()
-    gbj_appsmooth<class SMT, typename DAT>(DAT valMin, DAT valMax)
+    gbj_appsmooth<class SMT, typename DAT>(DAT valMax, DAT valMin)
     gbj_appsmooth<class SMT, typename DAT>(DAT valMax)
 
 #### Parameters
@@ -97,12 +97,12 @@ Constructor creates the class instance object and is overloaded with various com
   * *Default value*: float
 
 
-* **valMin**: Minimum of general valid range of samples of all smoothed measures.
+* **valMax**: Maximum of general valid range of samples of all smoothed measures.
   * *Valid values*: various
   * *Default value*: templated
 
 
-* **valMax**: Maximum of general valid range of samples of all smoothed measures.
+* **valMin**: Minimum of general valid range of samples of all smoothed measures.
   * *Valid values*: various
   * *Default value*: templated
 
@@ -116,7 +116,8 @@ Object performing smoothing management.
 #include "gbj_running.h"
 
 gbj_appsmooth<gbj_exponential> smoothFloat = gbj_appsmooth<gbj_exponential>();
-gbj_appsmooth<gbj_exponential, int> smoothInt = gbj_appsmooth<gbj_running, int>(10, 50);
+gbj_appsmooth<gbj_exponential, int> smoothInt = gbj_appsmooth<gbj_running, int>(50, 10);
+gbj_appsmooth<gbj_exponential, long> smoothLong = gbj_appsmooth<gbj_running, long>(3000);
 ```
 
 [Back to interface](#interface)
