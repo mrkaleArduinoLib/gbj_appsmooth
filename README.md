@@ -5,7 +5,6 @@ This is an application library, which is used usually as a project library for p
 
 * Functionality is hidden from the main sketch.
 * The library follows the principle `separation of concerns`.
-* The library is reusable for various projects without need to code a led management.
 * Update in library is valid for all involved projects.
 * The library manages the smoothing and provides the same interface for various smoothing algorithms.
 
