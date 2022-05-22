@@ -67,10 +67,10 @@ void setup_uint_norange()
 //******************************************************************************
 void test_version(void)
 {
-  String valExpected, valActual;
+  String version, valExpected, valActual;
+  version = String(smoothFloat.VERSION);
   valExpected = "GBJ_APPSMOOTH";
-  valActual =
-    smoothFloat.VERSION.substring(0, smoothFloat.VERSION.indexOf(" "));
+  valActual = version.substring(0, version.indexOf(" "));
   TEST_ASSERT_EQUAL_STRING(valExpected.c_str(), valActual.c_str());
 }
 

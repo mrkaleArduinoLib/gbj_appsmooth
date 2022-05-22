@@ -32,7 +32,7 @@ template<class SMT, typename DAT = float>
 class gbj_appsmooth
 {
 public:
-  const char *VERSION = "GBJ_APPSMOOTH 1.2.0";
+  const char *VERSION = "GBJ_APPSMOOTH 1.3.0";
 
   /*
     Constructor
@@ -47,10 +47,17 @@ public:
       - Data type: templated
     valMin - Minimum of a valid range of a data item.
       - Data type: templated
+    valMin - Maximal absolute valid change between subsequent data items.
+      - Data type: templated
 
     RETURN: object
   */
   inline gbj_appsmooth() {}
+  inline gbj_appsmooth(DAT valMax)
+  {
+    valMax_ = valMax;
+    flGenMax_ = true;
+  }
   inline gbj_appsmooth(DAT valMax, DAT valMin)
   {
     if (valMin > valMax)
@@ -65,10 +72,20 @@ public:
     }
     flGenMin_ = flGenMax_ = true;
   }
-  inline gbj_appsmooth(DAT valMax)
+  inline gbj_appsmooth(DAT valMax, DAT valMin, DAT valDif)
   {
-    valMax_ = valMax;
-    flGenMax_ = true;
+    if (valMin > valMax)
+    {
+      valMin_ = valMax;
+      valMax_ = valMin;
+    }
+    else
+    {
+      valMin_ = valMin;
+      valMax_ = valMax;
+    }
+    valDif_ = (valDif < 0 ? -1 * valDif : valDif);
+    flGenMin_ = flGenMax_ = flGenDif_ = true;
   }
 
   /*
@@ -90,17 +107,19 @@ public:
   */
   inline void begin(byte measures = 1)
   {
-    SERIAL_VALUE("begin", measures)
     measures_ = max((byte)1, measures);
     smoothers_ = new Smoother[measures_];
     for (byte i = 0; i < measures_; i++)
     {
       smoothers_[i].smoother = new SMT();
       smoothers_[i].valueOutput = (DAT)smoothers_[i].smoother->getValue();
+      smoothers_[i].valueInput = smoothers_[i].valueOutput;
+      smoothers_[i].flRun = false;
       smoothers_[i].flValid = true;
     }
     resetMinimum();
     resetMaximum();
+    resetDifference();
     // General valid range limits
     if (flGenMin_)
     {
@@ -109,6 +128,10 @@ public:
     if (flGenMax_)
     {
       setMaximum(valMax_);
+    }
+    if (flGenDif_)
+    {
+      setDifference(valDif_);
     }
   }
 
@@ -198,6 +221,26 @@ public:
       resetMaximum(i);
     }
   }
+  inline void setDifference(DAT data, byte idx)
+  {
+    smoothers_[idx].difference = data;
+    smoothers_[idx].flDif = true;
+  }
+  inline void setDifference(DAT data)
+  {
+    for (byte i = 0; i < getMeasures(); i++)
+    {
+      setDifference(data, i);
+    }
+  }
+  inline void resetDifference(byte idx) { smoothers_[idx].flDif = false; }
+  inline void resetDifference()
+  {
+    for (byte i = 0; i < getMeasures(); i++)
+    {
+      resetDifference(i);
+    }
+  }
 
   // Getters
   inline byte getMeasures() { return measures_; }
@@ -238,6 +281,7 @@ public:
   inline DAT getInput(byte idx = 0) { return smoothers_[idx].valueInput; }
   inline DAT getMinimum(byte idx = 0) { return smoothers_[idx].minimum; }
   inline DAT getMaximum(byte idx = 0) { return smoothers_[idx].maximum; }
+  inline DAT getDifference(byte idx = 0) { return smoothers_[idx].difference; }
   inline bool isValid(byte idx = 0) { return smoothers_[idx].flValid; }
   inline bool isInvalid(byte idx = 0) { return !isValid(idx); }
 
@@ -248,29 +292,44 @@ private:
     DAT valueOutput;
     DAT minimum;
     DAT maximum;
+    DAT difference;
     SMT *smoother; // Should be after DAT members
     bool flMin; // Test for minimum if true
     bool flMax; // Test for maximum if true
+    bool flDif; // Test for difference if true
+    bool flRun; // Running after initialization
     bool flValid; // Input accepted
     bool setValue(DAT val)
     {
-      valueInput = val;
+      // Test
+      flValid = true;
       if (flMin && val < minimum)
       {
-        return (flValid = false);
+        flValid = false;
       }
-      if (flMax && val > maximum)
+      else if (flMax && val > maximum)
       {
-        return (flValid = false);
+        flValid = false;
       }
-      valueOutput = (DAT)smoother->getValue((DAT)val);
-      return (flValid = true);
+      else if (flRun && flDif && valAbs(val - valueInput) > difference)
+      {
+        flValid = false;
+      }
+      // Evaluation
+      if (flValid)
+      {
+        flRun = true;
+        valueInput = val;
+        valueOutput = (DAT)smoother->getValue((DAT)val);
+      }
+      return flValid;
     }
+    DAT valAbs(DAT data) { return data < 0 ? -1 * data : data; }
   };
   Smoother *smoothers_; // List of measures' smoothers
   byte measures_; // Number of used measures
-  DAT valMin_, valMax_; // General range limits
-  bool flGenMin_, flGenMax_; // Flags about defining range limits
+  DAT valMin_, valMax_, valDif_; // General range and difference limits
+  bool flGenMin_, flGenMax_, flGenDif_; // Flags about general limits
 };
 
 #endif

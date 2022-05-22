@@ -27,9 +27,10 @@
 const float EXPONENTIAL_FACTOR = 0.2;
 const float MINIMUM = 40.0;
 const float MAXIMUM = 60.0;
+const float DIFFERENCE = 10.0;
 const byte MEASURES = 2;
 
-const float SAMPLE_LIST[] = { 38.9, 45.0, 56.7, 61.7, 42.3 };
+const float SAMPLE_LIST[] = { 42.3, 38.9, 45.0, 56.7, 61.7, 52.3, 41.1, 48.4 };
 const byte SAMPLES = sizeof(SAMPLE_LIST) / sizeof(SAMPLE_LIST[0]);
 
 gbj_appsmooth<gbj_exponential, float> smoothFloat =
@@ -47,6 +48,16 @@ void setup_float_norange()
   }
 }
 
+void setup_float_norange_difference()
+{
+  smoothFloat.begin(MEASURES);
+  for (byte i = 0; i < smoothFloat.getMeasures(); i++)
+  {
+    smoothFloat.getMeasurePtr(i)->setFactor(EXPONENTIAL_FACTOR);
+    smoothFloat.setDifference(DIFFERENCE * (i + 1), i);
+  }
+}
+
 void setup_float_range()
 {
   smoothFloat.begin(MEASURES);
@@ -55,6 +66,18 @@ void setup_float_range()
     smoothFloat.getMeasurePtr(i)->setFactor(EXPONENTIAL_FACTOR);
     smoothFloat.setMinimum(MINIMUM * (i + 1), i);
     smoothFloat.setMaximum(MAXIMUM * (i + 1), i);
+  }
+}
+
+void setup_float_range_difference()
+{
+  smoothFloat.begin(MEASURES);
+  for (byte i = 0; i < smoothFloat.getMeasures(); i++)
+  {
+    smoothFloat.getMeasurePtr(i)->setFactor(EXPONENTIAL_FACTOR);
+    smoothFloat.setMinimum(MINIMUM * (i + 1), i);
+    smoothFloat.setMaximum(MAXIMUM * (i + 1), i);
+    smoothFloat.setDifference(DIFFERENCE * (i + 1), i);
   }
 }
 
@@ -72,10 +95,10 @@ void setup_uint_norange()
 //******************************************************************************
 void test_version(void)
 {
-  String valExpected, valActual;
+  String version, valExpected, valActual;
+  version = String(smoothFloat.VERSION);
   valExpected = "GBJ_APPSMOOTH";
-  valActual =
-    smoothFloat.VERSION.substring(0, smoothFloat.VERSION.indexOf(" "));
+  valActual = version.substring(0, version.indexOf(" "));
   TEST_ASSERT_EQUAL_STRING(valExpected.c_str(), valActual.c_str());
 }
 
@@ -145,6 +168,42 @@ void test_float_norange(void)
   }
 }
 
+void test_float_norange_difference(void)
+{
+  float valInput, valInputOld, valActual, valExpected, valExpectedOld;
+  setup_float_norange_difference();
+  for (byte i = 0; i < MEASURES; i++)
+  {
+    bool flInit = false;
+    valExpectedOld = 0;
+    for (byte j = 0; j < SAMPLES; j++)
+    {
+      valInput = SAMPLE_LIST[j] * (i + 1);
+      if (flInit && fabs(valInput - valInputOld) > (DIFFERENCE * (i + 1)))
+      {
+        valExpected = valExpectedOld;
+      }
+      else if (flInit)
+      {
+        valInputOld = valInput;
+        valExpectedOld += EXPONENTIAL_FACTOR * (valInput - valExpectedOld);
+        valExpected = valExpectedOld;
+      }
+      else
+      {
+        valExpected = valInputOld = valInput;
+        valExpectedOld = valExpected;
+        flInit = true;
+      }
+      // Testee
+      smoothFloat.setValue(valInput, i);
+      valActual = smoothFloat.getValue(i);
+      String msg = "i=" + String(i) + ", j=" + String(j);
+      TEST_ASSERT_EQUAL_FLOAT_MESSAGE(valExpected, valActual, msg.c_str());
+    }
+  }
+}
+
 void test_float_range(void)
 {
   float valInput, valActual, valExpected, valExpectedOld;
@@ -169,6 +228,44 @@ void test_float_range(void)
       else
       {
         valExpected = valInput;
+        valExpectedOld = valExpected;
+        flInit = true;
+      }
+      // Testee
+      smoothFloat.setValue(valInput, i);
+      valActual = smoothFloat.getValue(i);
+      String msg = "i=" + String(i) + ", j=" + String(j);
+      TEST_ASSERT_EQUAL_FLOAT_MESSAGE(valExpected, valActual, msg.c_str());
+    }
+  }
+}
+
+void test_float_range_difference(void)
+{
+  float valInput, valInputOld, valActual, valExpected, valExpectedOld;
+  setup_float_range_difference();
+  for (byte i = 0; i < MEASURES; i++)
+  {
+    bool flInit = false;
+    valExpectedOld = 0;
+    for (byte j = 0; j < SAMPLES; j++)
+    {
+      valInput = SAMPLE_LIST[j] * (i + 1);
+      // Algorithm
+      if (valInput < (MINIMUM * (i + 1)) || valInput > (MAXIMUM * (i + 1)) ||
+          (flInit && fabs(valInput - valInputOld) > (DIFFERENCE * (i + 1))))
+      {
+        valExpected = valExpectedOld;
+      }
+      else if (flInit)
+      {
+        valInputOld = valInput;
+        valExpectedOld += EXPONENTIAL_FACTOR * (valInput - valExpectedOld);
+        valExpected = valExpectedOld;
+      }
+      else
+      {
+        valExpected = valInputOld = valInput;
         valExpectedOld = valExpected;
         flInit = true;
       }
@@ -238,7 +335,9 @@ void setup()
   RUN_TEST(test_minimum_float);
   RUN_TEST(test_maximum_float);
   RUN_TEST(test_float_norange);
+  RUN_TEST(test_float_norange_difference);
   RUN_TEST(test_float_range);
+  RUN_TEST(test_float_range_difference);
   //
   RUN_TEST(test_factor_uint);
   RUN_TEST(test_uint_norange);
