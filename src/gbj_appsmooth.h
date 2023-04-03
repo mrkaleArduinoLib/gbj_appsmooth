@@ -32,8 +32,6 @@ template<class SMT, typename DAT = float>
 class gbj_appsmooth
 {
 public:
-  const char *VERSION = "GBJ_APPSMOOTH 1.3.0";
-
   /*
     Constructor
 
@@ -98,10 +96,10 @@ public:
 
     PARAMETERS:
     measures - Number of measures to be filtered, which means number of used
-      smoothers. It initiates (defines) valid measures range.
-      - Data type: positive integer
-      - Default value: 1
-      - Limited range: 1 ~ 255
+    smoothers. It initiates (defines) valid measures range.
+    - Data type: positive integer
+    - Default value: 1
+    - Limited range: 1 ~ 255
 
     RETURN: none
   */

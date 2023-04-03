@@ -93,15 +93,6 @@ void setup_uint_norange()
 //******************************************************************************
 // Tests
 //******************************************************************************
-void test_version(void)
-{
-  String version, valExpected, valActual;
-  version = String(smoothFloat.VERSION);
-  valExpected = "GBJ_APPSMOOTH";
-  valActual = version.substring(0, version.indexOf(" "));
-  TEST_ASSERT_EQUAL_STRING(valExpected.c_str(), valActual.c_str());
-}
-
 void test_factor_float(void)
 {
   float valActual, valExpected;
@@ -329,8 +320,6 @@ void setup()
   delay(2000);
   UNITY_BEGIN();
 
-  RUN_TEST(test_version);
-  //
   RUN_TEST(test_factor_float);
   RUN_TEST(test_minimum_float);
   RUN_TEST(test_maximum_float);

@@ -40,12 +40,6 @@ The subfolder `tests` in the folder `extras`, i.e., `gbj_appsmooth/extras/tests`
 * **test_running.cpp**: Test file providing test cases for statistical smoothing by running statistics.
 
 
-<a id="constants"></a>
-
-## Constants
-* **VERSION**: Name and semantic version of the library.
-
-
 <a id="interface"></a>
 
 ## Interface
