@@ -291,12 +291,18 @@ private:
     DAT minimum;
     DAT maximum;
     DAT difference;
-    SMT *smoother; // Should be after DAT members
-    bool flMin; // Test for minimum if true
-    bool flMax; // Test for maximum if true
-    bool flDif; // Test for difference if true
-    bool flRun; // Running after initialization
-    bool flValid; // Input accepted
+    // Should be after DAT members
+    SMT *smoother;
+    // Test for minimum if true
+    bool flMin;
+    // Test for maximum if true
+    bool flMax;
+    // Test for difference if true
+    bool flDif;
+    // Running after initialization
+    bool flRun;
+    // Input accepted
+    bool flValid;
     bool setValue(DAT val)
     {
       // Test
@@ -324,10 +330,15 @@ private:
     }
     DAT valAbs(DAT data) { return data < 0 ? -1 * data : data; }
   };
-  Smoother *smoothers_; // List of measures' smoothers
-  byte measures_; // Number of used measures
-  DAT valMin_, valMax_, valDif_; // General range and difference limits
-  bool flGenMin_, flGenMax_, flGenDif_; // Flags about general limits
+  // Number of used measures
+  Smoother *smoothers_;
+  byte measures_;
+  // General range and difference limits
+  DAT valMin_, valMax_, valDif_;
+  // Flags about general limits (without initialization interpreted as 255)
+  bool flGenMin_ = false;
+  bool flGenMax_ = false;
+  bool flGenDif_ = false;
 };
 
 #endif
