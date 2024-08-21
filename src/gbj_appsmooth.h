@@ -45,7 +45,7 @@ public:
       - Data type: templated
     valMin - Minimum of a valid range of a data item.
       - Data type: templated
-    valMin - Maximal absolute valid change between subsequent data items.
+    valDif - Maximal absolute valid change between subsequent data items.
       - Data type: templated
 
     RETURN: object
@@ -55,6 +55,7 @@ public:
   {
     valMax_ = valMax;
     flGenMax_ = true;
+    flGenMin_ = flGenDif_ = false;
   }
   inline gbj_appsmooth(DAT valMax, DAT valMin)
   {
@@ -69,6 +70,7 @@ public:
       valMax_ = valMax;
     }
     flGenMin_ = flGenMax_ = true;
+    flGenDif_ = false;
   }
   inline gbj_appsmooth(DAT valMax, DAT valMin, DAT valDif)
   {
